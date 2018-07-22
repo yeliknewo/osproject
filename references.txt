@@ -4,3 +4,7 @@ http://www.cplusplus.com/reference/cstdio/printf/
 https://cs.baylor.edu/~donahoo/tools/gdb/tutorial.html
 http://pubs.opengroup.org/onlinepubs/009695399/functions/setsockopt.html
 http://www.linuxhowtos.org/C_C++/socket.htm
+http://www.cplusplus.com/forum/unices/194352/
+https://stackoverflow.com/questions/14265581/parse-split-a-string-in-c-using-string-delimiter-standard-c
+https://msdn.microsoft.com/en-us/library/2dzy4k6e.aspx
+https://stackoverflow.com/questions/10789740/passing-stdstring-by-value-or-reference

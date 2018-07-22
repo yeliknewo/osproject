@@ -11,3 +11,4 @@ $(OUT): $(OBJECTS)
 
 clean:
 	rm -f *.o $(OUT)
+	sudo pkill -f $(OUT)
