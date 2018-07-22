@@ -8,3 +8,4 @@ http://www.cplusplus.com/forum/unices/194352/
 https://stackoverflow.com/questions/14265581/parse-split-a-string-in-c-using-string-delimiter-standard-c
 https://msdn.microsoft.com/en-us/library/2dzy4k6e.aspx
 https://stackoverflow.com/questions/10789740/passing-stdstring-by-value-or-reference
+https://stackoverflow.com/questions/15138785/how-to-read-a-file-into-vector-in-c
