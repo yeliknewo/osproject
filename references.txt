@@ -1,0 +1,6 @@
+https://www.geeksforgeeks.org/socket-programming-cc/
+http://www.cplusplus.com/doc/oldtutorial/templates/
+http://www.cplusplus.com/reference/cstdio/printf/
+https://cs.baylor.edu/~donahoo/tools/gdb/tutorial.html
+http://pubs.opengroup.org/onlinepubs/009695399/functions/setsockopt.html
+http://www.linuxhowtos.org/C_C++/socket.htm
