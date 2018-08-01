@@ -9,3 +9,6 @@ https://stackoverflow.com/questions/14265581/parse-split-a-string-in-c-using-str
 https://msdn.microsoft.com/en-us/library/2dzy4k6e.aspx
 https://stackoverflow.com/questions/10789740/passing-stdstring-by-value-or-reference
 https://stackoverflow.com/questions/15138785/how-to-read-a-file-into-vector-in-c
+https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
+https://stackoverflow.com/questions/5840148/how-can-i-get-a-files-size-in-c
+https://stackoverflow.com/questions/12774207/fastest-way-to-check-if-a-file-exist-using-standard-c-c11-c

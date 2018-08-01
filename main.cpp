@@ -5,6 +5,9 @@
 #include <iterator>
 #include <thread>
 #include <vector>
+#include <stdio.h>
+#include <stdlib.h>
+
 
 void AssertF(bool cmp, char const* err_type, char const* err_msg) {
 
@@ -255,24 +258,65 @@ void Split(std::vector<std::string>* out, std::string const& in, std::string con
     (*out).push_back(s.substr(start, end));
 
 }
+// See references
+inline bool fileExists (const std::string& name) {
+    if (FILE *file = fopen(name.c_str(), "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
+    }   
+}
 
-void SendInitialResponse(int sock_fd, HTTP::Versions::E http_version, HTTP::ResponseCodes::E response_code) {
+void HandleGet(int sock_fd, HTTP::Versions::E http_version, std::string uri, std::string const& content){
+    // Get file content points to.
+    printf("Requestiong folder: %s\n", content.c_str());
+    printf("URI is: %s\n", uri.c_str());
+    std::string fileToServe;
+    fileToServe.append(content.c_str());
+    fileToServe.append(uri.c_str());
+    printf("File to serve is: %d\n", fileToServe.c_str());
+    HTTP::ResponseCodes::E response_code = HTTP::ResponseCodes::E::OK;
+    if(!fileExists(fileToServe)){
+        fileToServe = "files/not_found.html";
+        response_code = HTTP::ResponseCodes::E::NOT_FOUND;
+    } 
+    std::ifstream ifs(fileToServe);
+    std::ifstream file(fileToServe);
+    std::string fileContent((std::istreambuf_iterator<char>(file)),
+                std::istreambuf_iterator<char>());
 
-    char buffer[1024];
+    std::ifstream in(fileToServe, std::ifstream::ate | std::ifstream::binary);
+    int fileLength = in.tellg();
+    printf("File length is: %d\n", fileLength);
+    
+    std::string response = 
+    HTTP::Versions::GetString(http_version) + " " + 
+    HTTP::ResponseCodes::GetCodeString(response_code) + " " + 
+    HTTP::ResponseCodes::GetHumanString(response_code) + "\r\n" + 
+    "Host: "+"localhost\r\n"+
+    "Content-Length: "+std::to_string(fileLength)+
+    "\r\n"+"Content-Type: "+
+    "text/html\r\n\r\n"+fileContent + "\r\n";
+    //Create pointer
+    const char * responsePointer = response.c_str();
 
-    sprintf(buffer, "HTTP/%s %s %s", HTTP::Versions::GetString(http_version).c_str(), HTTP::ResponseCodes::GetCodeString(response_code).c_str(), HTTP::ResponseCodes::GetHumanString(response_code).c_str());
+    // This is creating headers
+    printf("The response is:\n%s\n", response.c_str());
+    send(sock_fd, responsePointer, strlen(responsePointer), 0);
+}
 
-    send(sock_fd, buffer, strlen(buffer), 0);
+void SendInitialResponse(int sock_fd, HTTP::Versions::E http_version, std::string uri, std::string const& content, HTTP::RequestMethods::E method) {
+    // How to compare?
+    if(method == HTTP::RequestMethods::E::GET){
+        HandleGet(sock_fd, http_version, uri, content);
+    } else{
+        //Handle put here
+    }
+    
 
 }
 
-void SendBody(int sock_fd, std::string const& uri) {
-
-    std::ifstream is(uri);
-    std::istream_iterator<char> start(is), end;
-    std::vector<char> chars(start, end);
-
-}
 
 void HandleConnection(int sock_fd, std::string const& my_home, std::string const& content) {
 
@@ -287,12 +331,16 @@ void HandleConnection(int sock_fd, std::string const& my_home, std::string const
     std::string uri = AssertNotNull(strings[1].c_str(), "Split Failed");
     HTTP::Versions::E http_version = HTTP::Versions::Parse(AssertNotNull(strings[2].c_str(), "Split failed"));
 
-    HTTP::ResponseCodes::E response_code = HTTP::ResponseCodes::E::NOT_FOUND;
+    
 
-    SendInitialResponse(sock_fd, http_version, response_code);
-    SendBody(sock_fd, uri);
+    SendInitialResponse(sock_fd, http_version, uri, content, method);
+    //SendBody(sock_fd, uri, content);
 
 }
+
+
+
+
 
 int main(int argc, char** argv, char** environment) {
 
@@ -321,7 +369,6 @@ int main(int argc, char** argv, char** environment) {
     address.sin_port = htons(port);
 
     AssertEq(bind(sock_fd, (struct sockaddr*)&address, (socklen_t)addr_len), 0, "Failed to Bind");
-
     AssertEq(listen(sock_fd, 0), 0, "Failed to Listen");
 
     while(true) {
