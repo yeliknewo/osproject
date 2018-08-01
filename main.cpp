@@ -258,6 +258,7 @@ void Split(std::vector<std::string>* out, std::string const& in, std::string con
     (*out).push_back(s.substr(start, end));
 
 }
+
 // See references
 inline bool fileExists (const std::string& name) {
     if (FILE *file = fopen(name.c_str(), "r")) {
@@ -275,9 +276,9 @@ void HandleGet(int sock_fd, HTTP::Versions::E http_version, std::string uri, std
     std::string fileToServe;
     fileToServe.append(content.c_str());
     fileToServe.append(uri.c_str());
-    printf("File to serve is: %d\n", fileToServe.c_str());
+    printf("File to serve is: %s\n", fileToServe.c_str());
     HTTP::ResponseCodes::E response_code = HTTP::ResponseCodes::E::OK;
-    if(!fileExists(fileToServe)){
+    if(!fileExists(fileToServe)) {
         fileToServe = "files/not_found.html";
         response_code = HTTP::ResponseCodes::E::NOT_FOUND;
     } 
