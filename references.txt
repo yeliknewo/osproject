@@ -12,3 +12,6 @@ https://stackoverflow.com/questions/15138785/how-to-read-a-file-into-vector-in-c
 https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
 https://stackoverflow.com/questions/5840148/how-can-i-get-a-files-size-in-c
 https://stackoverflow.com/questions/12774207/fastest-way-to-check-if-a-file-exist-using-standard-c-c11-c
+https://stackoverflow.com/questions/6932409/writting-a-string-to-the-end-of-a-file-c
+https://stackoverflow.com/questions/13935357/how-do-i-create-a-file-in-a-sub-directory-in-c
+https://stackoverflow.com/questions/17032970/clear-data-inside-text-file-in-c

@@ -7,6 +7,7 @@
 #include <vector>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fstream>
 
 
 void AssertF(bool cmp, char const* err_type, char const* err_msg) {
@@ -69,6 +70,7 @@ namespace HTTP {
             GET,
             POST,
             HEAD,
+            PUT
             
         };
 
@@ -77,7 +79,7 @@ namespace HTTP {
             static const std::string& GET = "GET";
             static const std::string& POST = "POST";    
             static const std::string& HEAD = "HEAD";
-
+            static const std::string& PUT = "PUT";
         }
 
         E Parse(std::string const& msg) {
@@ -93,6 +95,9 @@ namespace HTTP {
             } else if(CanFind(msg, S::HEAD)) {
 
                 return E::HEAD;
+            } else if(CanFind(msg, S::PUT)){
+
+                return E::PUT;
 
             } else  {
 
@@ -166,6 +171,7 @@ namespace HTTP {
 
             OK,
             NOT_FOUND,
+            CREATED
 
         };
 
@@ -178,6 +184,9 @@ namespace HTTP {
                 // 200
                 static const std::string& OK = "200";
 
+
+                // 201
+                static const std::string& CREATED = "201";
                 // 300
 
                 // 400
@@ -195,6 +204,9 @@ namespace HTTP {
                 // 404
                 static const std::string& NOT_FOUND = "Not Found";
 
+                // 201
+                static const std::string& CREATED = "CREATED";
+
             }
 
         }
@@ -208,6 +220,9 @@ namespace HTTP {
 
                 case E::OK:
                     return S::Codes::OK;
+
+                case E::CREATED:
+                    return S::Codes::CREATED;
 
                 default:
                     AssertF(false, "HTTP", "Unable to match Response Code");
@@ -226,6 +241,9 @@ namespace HTTP {
 
                 case E::OK:
                     return S::Human::OK;
+
+                case E::CREATED:
+                    return S::Human::CREATED;
 
                 default:
                     AssertF(false, "HTTP", "Unable to match Human Response Code");
@@ -269,8 +287,50 @@ inline bool fileExists (const std::string& name) {
     }   
 }
 
+void HandlePut(int sock_fd, HTTP::Versions::E http_version, std::string uri, std::string const& content){
+    //There will be one file and whatever is passed through the put will be added on as a <p> to that file.
+    printf("%s", "Handling PUT request\n");
+    printf("The URI is: %s\n", uri.c_str());
+    //Get the put request file.
+    std::string fileToServe = "files/put_request.txt";
+    HTTP::ResponseCodes::E response_code = HTTP::ResponseCodes::E::OK;
+    std::string contentLocation = "files/put_request.txt";
+    if(!fileExists(fileToServe)){
+        // Create the put_request.txt with info here. See references. 
+        std::ofstream myfile(".\\files\\put_request.txt");
+        // Update header to 201 created.
+        response_code = HTTP::ResponseCodes::E::CREATED;
+    }
+
+    // Add the data in the put to the file. See references. 
+    std::ofstream out;
+    // Open with trunc so file contents get deleted when overwritten.
+    out.open(fileToServe, std::ios::out | std::ios::trunc);
+    out << uri;
+    out.close();
+
+
+    
+    //Send response that it was added. Response is not currently registering but data is being added to file. TODO.
+    std::string response = 
+    HTTP::Versions::GetString(http_version) + " " + 
+    HTTP::ResponseCodes::GetCodeString(response_code) + " " + 
+    HTTP::ResponseCodes::GetHumanString(response_code) + "\r\n" +
+    "Content-Location: "+contentLocation;
+
+     //Create pointer
+    const char * responsePointer = response.c_str();
+
+    // This is creating headers
+    printf("The response is:\n%s\n", response.c_str());
+    send(sock_fd, responsePointer, strlen(responsePointer), 0);
+
+}
+
+
 void HandleGet(int sock_fd, HTTP::Versions::E http_version, std::string uri, std::string const& content){
     // Get file content points to.
+    printf("%s\n", "Handling GET request");
     printf("Requestiong folder: %s\n", content.c_str());
     printf("URI is: %s\n", uri.c_str());
     std::string fileToServe;
@@ -281,7 +341,9 @@ void HandleGet(int sock_fd, HTTP::Versions::E http_version, std::string uri, std
     if(!fileExists(fileToServe)) {
         fileToServe = "files/not_found.html";
         response_code = HTTP::ResponseCodes::E::NOT_FOUND;
-    } 
+    }  else if (uri == "/"){
+        fileToServe = "files/basic.html";
+    }
     std::ifstream ifs(fileToServe);
     std::ifstream file(fileToServe);
     std::string fileContent((std::istreambuf_iterator<char>(file)),
@@ -311,8 +373,8 @@ void SendInitialResponse(int sock_fd, HTTP::Versions::E http_version, std::strin
     // How to compare?
     if(method == HTTP::RequestMethods::E::GET){
         HandleGet(sock_fd, http_version, uri, content);
-    } else{
-        //Handle put here
+    } else if(method == HTTP::RequestMethods::E::PUT){
+        HandlePut(sock_fd, http_version, uri, content);
     }
     
 
