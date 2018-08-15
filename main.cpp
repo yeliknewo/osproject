@@ -10,6 +10,8 @@
 #include <fstream>
 
 
+void HandleConnection(int sock_fd, std::string const& my_home, std::string const& content);
+
 void AssertF(bool cmp, char const* err_type, char const* err_msg) {
 
     if(!cmp) {
@@ -171,7 +173,8 @@ namespace HTTP {
 
             OK,
             NOT_FOUND,
-            CREATED
+            CREATED,
+            NOCONTENT
 
         };
 
@@ -187,6 +190,9 @@ namespace HTTP {
 
                 // 201
                 static const std::string& CREATED = "201";
+
+                // 204
+                static const std::string& NOCONTENT = "204";
                 // 300
 
                 // 400
@@ -207,6 +213,8 @@ namespace HTTP {
                 // 201
                 static const std::string& CREATED = "CREATED";
 
+                // 204
+                static const std::string& NOCONTENT = "No Content";
             }
 
         }
@@ -223,6 +231,9 @@ namespace HTTP {
 
                 case E::CREATED:
                     return S::Codes::CREATED;
+
+                case E::NOCONTENT:
+                    return S::Codes::NOCONTENT;
 
                 default:
                     AssertF(false, "HTTP", "Unable to match Response Code");
@@ -244,6 +255,9 @@ namespace HTTP {
 
                 case E::CREATED:
                     return S::Human::CREATED;
+
+                case E::NOCONTENT:
+                    return S::Human::NOCONTENT;
 
                 default:
                     AssertF(false, "HTTP", "Unable to match Human Response Code");
@@ -287,13 +301,25 @@ inline bool fileExists (const std::string& name) {
     }   
 }
 
-void HandlePut(int sock_fd, HTTP::Versions::E http_version, std::string uri, std::string const& content){
+bool checkRequest(std::string uri){
+    // See references.
+    if(uri.find("..") != std::string::npos){
+        return true;
+    }
+
+    return false;
+}
+
+void HandlePut(int sock_fd, HTTP::Versions::E http_version, std::string uri, std::string const& content, std::string const& my_home){
     //There will be one file and whatever is passed through the put will be added on as a <p> to that file.
     printf("%s", "Handling PUT request\n");
     printf("The URI is: %s\n", uri.c_str());
+    if(checkRequest(uri)){
+        uri = ".. in URI. Caught.";
+    }
     //Get the put request file.
     std::string fileToServe = "files/put_request.txt";
-    HTTP::ResponseCodes::E response_code = HTTP::ResponseCodes::E::OK;
+    HTTP::ResponseCodes::E response_code = HTTP::ResponseCodes::E::NOCONTENT;
     std::string contentLocation = "files/put_request.txt";
     if(!fileExists(fileToServe)){
         // Create the put_request.txt with info here. See references. 
@@ -311,12 +337,12 @@ void HandlePut(int sock_fd, HTTP::Versions::E http_version, std::string uri, std
 
 
     
-    //Send response that it was added. Response is not currently registering but data is being added to file. TODO.
+    //Send response that it was added. 
     std::string response = 
     HTTP::Versions::GetString(http_version) + " " + 
     HTTP::ResponseCodes::GetCodeString(response_code) + " " + 
     HTTP::ResponseCodes::GetHumanString(response_code) + "\r\n" +
-    "Content-Location: "+contentLocation;
+    "Content-Location: "+contentLocation +"\r\n\r\n";
 
      //Create pointer
     const char * responsePointer = response.c_str();
@@ -324,15 +350,21 @@ void HandlePut(int sock_fd, HTTP::Versions::E http_version, std::string uri, std
     // This is creating headers
     printf("The response is:\n%s\n", response.c_str());
     send(sock_fd, responsePointer, strlen(responsePointer), 0);
-
+    HandleConnection(sock_fd, my_home, content);
 }
 
 
-void HandleGet(int sock_fd, HTTP::Versions::E http_version, std::string uri, std::string const& content){
+
+
+
+void HandleGet(int sock_fd, HTTP::Versions::E http_version, std::string uri, std::string const& content, std::string const& my_home){
     // Get file content points to.
     printf("%s\n", "Handling GET request");
     printf("Requestiong folder: %s\n", content.c_str());
     printf("URI is: %s\n", uri.c_str());
+    if(checkRequest(uri)){
+        uri = "files/not_found.html";
+    }
     std::string fileToServe;
     fileToServe.append(content.c_str());
     fileToServe.append(uri.c_str());
@@ -367,14 +399,15 @@ void HandleGet(int sock_fd, HTTP::Versions::E http_version, std::string uri, std
     // This is creating headers
     printf("The response is:\n%s\n", response.c_str());
     send(sock_fd, responsePointer, strlen(responsePointer), 0);
+    HandleConnection(sock_fd, my_home, content);
 }
 
-void SendInitialResponse(int sock_fd, HTTP::Versions::E http_version, std::string uri, std::string const& content, HTTP::RequestMethods::E method) {
+void SendInitialResponse(int sock_fd, HTTP::Versions::E http_version, std::string uri, std::string const& content, HTTP::RequestMethods::E method, std::string const& my_home) {
     // How to compare?
     if(method == HTTP::RequestMethods::E::GET){
-        HandleGet(sock_fd, http_version, uri, content);
+        HandleGet(sock_fd, http_version, uri, content, my_home);
     } else if(method == HTTP::RequestMethods::E::PUT){
-        HandlePut(sock_fd, http_version, uri, content);
+        HandlePut(sock_fd, http_version, uri, content, my_home);
     }
     
 
@@ -396,8 +429,8 @@ void HandleConnection(int sock_fd, std::string const& my_home, std::string const
 
     
 
-    SendInitialResponse(sock_fd, http_version, uri, content, method);
-    //SendBody(sock_fd, uri, content);
+    SendInitialResponse(sock_fd, http_version, uri, content, method, my_home);
+    
 
 }
 
